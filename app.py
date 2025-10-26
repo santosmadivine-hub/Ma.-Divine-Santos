@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 # Sample in-memory data (acts like a mini database)
 students = [
-    {"id": 1, "name": "Divine Santos", "grade": 12, "section": "Zechariah"},
+    {"id": 1, "name": "Ma. Divine Santos", "grade": 12, "section": "Zechariah"},
     {"id": 2, "name": "John Cruz", "grade": 11, "section": "Gabriel"}
 ]
 
