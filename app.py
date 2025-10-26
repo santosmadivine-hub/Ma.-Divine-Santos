@@ -1,12 +1,80 @@
 from flask import Flask, jsonify, request
+
 app = Flask(__name__)
+
+# In-memory "database"
+students = [
+    {"id": 1, "name": "Divine Santos", "grade": 12, "section": "Zechariah"},
+    {"id": 2, "name": "John Cruz", "grade": 11, "section": "Gabriel"}
+]
+
+# Home route
 @app.route('/')
 def home():
- return "Welcome to my Flask API!"
-@app.route('/student')
-def get_student():
- return jsonify({
- "name": "Your Name",
- "grade": 10,
- "section": "Zechariah"
- })
+    return "🎓 Welcome to the Student Management Flask API!"
+
+# GET all students
+@app.route('/students', methods=['GET'])
+def get_students():
+    return jsonify(students)
+
+# GET a single student by ID
+@app.route('/students/<int:student_id>', methods=['GET'])
+def get_student(student_id):
+    student = next((s for s in students if s["id"] == student_id), None)
+    if student:
+        return jsonify(student)
+    return jsonify({"error": "Student not found"}), 404
+
+# POST - add a new student
+@app.route('/students', methods=['POST'])
+def add_student():
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'grade' not in data or 'section' not in data:
+        return jsonify({"error": "Please include name, grade, and section"}), 400
+
+    new_id = max([s["id"] for s in students]) + 1 if students else 1
+    new_student = {
+        "id": new_id,
+        "name": data["name"],
+        "grade": data["grade"],
+        "section": data["section"]
+    }
+
+    students.append(new_student)
+    return jsonify({"message": "✅ Student added successfully!", "student": new_student}), 201
+
+# PUT - update student info
+@app.route('/students/<int:student_id>', methods=['PUT'])
+def update_student(student_id):
+    data = request.get_json()
+    student = next((s for s in students if s["id"] == student_id), None)
+
+    if not student:
+        return jsonify({"error": "Student not found"}), 404
+
+    student.update({
+        "name": data.get("name", student["name"]),
+        "grade": data.get("grade", student["grade"]),
+        "section": data.get("section", student["section"])
+    })
+
+    return jsonify({"message": "📝 Student updated successfully!", "student": student})
+
+# DELETE - remove a student
+@app.route('/students/<int:student_id>', methods=['DELETE'])
+def delete_student(student_id):
+    global students
+    student = next((s for s in students if s["id"] == student_id), None)
+
+    if not student:
+        return jsonify({"error": "Student not found"}), 404
+
+    students = [s for s in students if s["id"] != student_id]
+    return jsonify({"message": "🗑️ Student deleted successfully!"})
+
+# Run the app
+if __name__ == '__main__':
+    app.run(debug=True)
+ 
