@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 
 app = Flask(__name__)
 
@@ -8,10 +8,110 @@ students = [
     {"id": 2, "name": "John Cruz", "grade": 11, "section": "Gabriel"}
 ]
 
-# Home route
+# Home route - HTML + Live student table
 @app.route('/')
 def home():
-    return "🎓 Welcome to my Enhanced Flask API!"
+    html_page = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>🎓 Student Management API</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #4f8ef7, #6ec9ff);
+                color: white;
+                text-align: center;
+                margin: 0;
+                padding: 40px;
+            }
+            h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            p {
+                font-size: 1.2em;
+            }
+            table {
+                margin: 30px auto;
+                border-collapse: collapse;
+                width: 80%;
+                background: white;
+                color: #333;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            }
+            th, td {
+                padding: 12px;
+                border-bottom: 1px solid #ddd;
+            }
+            th {
+                background-color: #0077ff;
+                color: white;
+            }
+            tr:hover {
+                background-color: #f2f2f2;
+            }
+            button {
+                background: #0077ff;
+                color: white;
+                border: none;
+                padding: 8px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+                margin: 10px;
+            }
+            button:hover {
+                background: #005ccc;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🎓 Student Management API</h1>
+        <p>Below is a live table showing all students from the API:</p>
+
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>Section</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button onclick="loadStudents()">🔄 Refresh List</button>
+
+        <script>
+            async function loadStudents() {
+                const response = await fetch('/students');
+                const data = await response.json();
+                const tbody = document.querySelector('#studentTable tbody');
+                tbody.innerHTML = ''; // Clear old rows
+
+                data.data.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${student.id}</td>
+                        <td>${student.name}</td>
+                        <td>${student.grade}</td>
+                        <td>${student.section}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Load data on page load
+            window.onload = loadStudents;
+        </script>
+    </body>
+    </html>
+    """
+    return render_template_string(html_page)
 
 # GET all students
 @app.route('/students', methods=['GET'])
@@ -33,8 +133,6 @@ def get_student(student_id):
 @app.route('/students', methods=['POST'])
 def add_student():
     data = request.get_json()
-    
-    # Validate input
     if not data or 'name' not in data or 'grade' not in data or 'section' not in data:
         return jsonify({"error": "Please include name, grade, and section"}), 400
 
@@ -56,7 +154,6 @@ def add_student():
 def update_student(student_id):
     data = request.get_json()
     student = next((s for s in students if s["id"] == student_id), None)
-
     if not student:
         return jsonify({"error": "Student not found"}), 404
 
@@ -75,7 +172,6 @@ def update_student(student_id):
 def delete_student(student_id):
     global students
     student = next((s for s in students if s["id"] == student_id), None)
-
     if not student:
         return jsonify({"error": "Student not found"}), 404
 
